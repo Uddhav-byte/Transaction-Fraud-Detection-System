@@ -5,7 +5,11 @@ A machine learning pipeline for identifying fraudulent financial transactions in
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3-orange?logo=scikit-learn)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.108-009688?logo=fastapi)
+![Render](https://img.shields.io/badge/Render-Live-success?logo=render)
 ![License](https://img.shields.io/badge/License-MIT-green)
+
+🌐 **Live API:** [https://transaction-fraud-detection-system-dls2.onrender.com](https://transaction-fraud-detection-system-dls2.onrender.com)  
+📖 **Interactive Swagger UI:** [https://transaction-fraud-detection-system-dls2.onrender.com/docs](https://transaction-fraud-detection-system-dls2.onrender.com/docs)
 
 ---
 
