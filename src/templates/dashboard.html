@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SentinelFraud AI — Real-Time Transaction Fraud Detection</title>
+  <meta name="description" content="Production-ready financial transaction fraud detection system powered by Machine Learning and FastAPI.">
+  
+  <!-- Fonts & Tailwind CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            dark: {
+              900: '#0B0F19',
+              850: '#0F172A',
+              800: '#151F32',
+              700: '#1E293B',
+              600: '#334155'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom glow effects & scrollbars */
+    .glow-emerald {
+      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.25);
+    }
+    .glow-rose {
+      box-shadow: 0 0 35px -5px rgba(244, 63, 94, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.3);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .pulse-dot {
+      animation: pulseAnimation 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseAnimation {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.15); }
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-slate-100 min-h-screen font-sans selection:bg-brand-600 selection:text-white antialiased">
+
+  <!-- Top Announcement / Live Indicator Bar -->
+  <header class="border-b border-dark-700/80 bg-dark-850/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-dark-900 rounded-[10px] flex items-center justify-center">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+              SentinelFraud <span class="text-xs px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono font-medium">AI v1.0</span>
+            </h1>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+              Live Inference
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Random Forest + SMOTE Pipeline • Real-Time Scoring</p>
+        </div>
+      </div>
+
+      <!-- Quick Nav & External Links -->
+      <div class="flex items-center gap-3">
+        <a href="#simulator" class="text-xs sm:text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-dark-700/50 transition">
+          Simulator
+        </a>
+        <a href="#metrics" class="text-xs sm:text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-dark-700/50 transition hidden md:inline-block">
+          Model Metrics
+        </a>
+        <a href="/docs" target="_blank" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg bg-dark-700 hover:bg-dark-600 text-slate-200 border border-dark-600 transition">
+          <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          </svg>
+          Swagger API
+        </a>
+        <a href="https://github.com/Uddhav-byte/Transaction-Fraud-Detection-System" target="_blank" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span class="hidden sm:inline">GitHub</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Hero & Executive Summary -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-dark-850 via-dark-800 to-indigo-950/40 border border-dark-700/80 p-6 sm:p-8">
+      <div class="absolute -right-16 -top-16 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-16 -bottom-16 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="relative z-10 max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-4">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Production Grade Machine Learning
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+          Real-Time Financial Fraud Detection & Risk Scoring Engine
+        </h2>
+        <p class="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
+          Engineered to analyze incoming banking and credit card transactions in under <strong class="text-white">15ms</strong>. 
+          Combines <strong class="text-indigo-300">Random Forest classification</strong> with <strong class="text-indigo-300">SMOTE oversampling</strong> to eliminate severe class imbalance and catch fraud attacks with <strong class="text-emerald-400">98.89% recall</strong>.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> API Status: <span class="text-emerald-300">Operational</span></span>
+          <span>•</span>
+          <span>Latency: <span class="text-indigo-300" id="latencyStat">~8ms</span></span>
+          <span>•</span>
+          <span>Engineered by: <a href="https://github.com/Uddhav-byte" target="_blank" class="text-indigo-400 hover:underline font-semibold">Uddhav</a></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-dark-850 border border-dark-700/80 rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Model Accuracy</span>
+          <span class="text-emerald-400 text-xs font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">3,000 Holdout</span>
+        </div>
+        <div class="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">99.83%</div>
+        <p class="mt-1 text-xs text-slate-400">High precision filtering</p>
+      </div>
+
+      <div class="bg-dark-850 border border-dark-700/80 rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">ROC - AUC</span>
+          <span class="text-indigo-400 text-xs font-mono bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">Benchmark</span>
+        </div>
+        <div class="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">0.9998</div>
+        <p class="mt-1 text-xs text-slate-400">Separation capacity</p>
+      </div>
+
+      <div class="bg-dark-850 border border-dark-700/80 rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Fraud Recall</span>
+          <span class="text-emerald-400 text-xs font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">89 / 90</span>
+        </div>
+        <div class="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">98.89%</div>
+        <p class="mt-1 text-xs text-slate-400">Only 1 missed attack</p>
+      </div>
+
+      <div class="bg-dark-850 border border-dark-700/80 rounded-xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-500/40 transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Inference Speed</span>
+          <span class="text-purple-400 text-xs font-mono bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">Async REST</span>
+        </div>
+        <div class="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">&lt; 15 ms</div>
+        <p class="mt-1 text-xs text-slate-400">Sub-second authorization</p>
+      </div>
+    </div>
+
+    <!-- MAIN SECTION: INTERACTIVE TRANSACTION SIMULATOR -->
+    <section id="simulator" class="scroll-mt-20">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-2">
+        <div>
+          <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest font-mono">Interactive Sandbox</span>
+          <h3 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Live Transaction Fraud Simulator</h3>
+        </div>
+        <p class="text-xs text-slate-400">Select a preconfigured case or tweak parameters to trigger real-time AI classification</p>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div class="bg-dark-850 border border-dark-700 rounded-xl p-3 sm:p-4 mb-6">
+        <div class="text-xs font-semibold text-slate-400 mb-2 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Quick Test Scenarios (1-Click Presets for Recruiter Demo):
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          <button onclick="loadScenario('coffee')" class="text-left p-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-emerald-500/50 transition group">
+            <div class="flex items-center justify-between">
+              <span class="text-base">☕</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Legit</span>
+            </div>
+            <div class="text-xs font-semibold text-white mt-1 group-hover:text-emerald-400">Morning Coffee</div>
+            <div class="text-[11px] text-slate-400">$4.75 • Domestic</div>
+          </button>
+
+          <button onclick="loadScenario('shopping')" class="text-left p-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-emerald-500/50 transition group">
+            <div class="flex items-center justify-between">
+              <span class="text-base">🛍️</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Legit</span>
+            </div>
+            <div class="text-xs font-semibold text-white mt-1 group-hover:text-emerald-400">Online Retail</div>
+            <div class="text-[11px] text-slate-400">$120.00 • Domestic</div>
+          </button>
+
+          <button onclick="loadScenario('splurge')" class="text-left p-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-amber-500/50 transition group">
+            <div class="flex items-center justify-between">
+              <span class="text-base">⚠️</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium</span>
+            </div>
+            <div class="text-xs font-semibold text-white mt-1 group-hover:text-amber-400">Midnight Splurge</div>
+            <div class="text-[11px] text-slate-400">$1,850 • Electronics</div>
+          </button>
+
+          <button onclick="loadScenario('wire')" class="text-left p-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-rose-500/50 transition group">
+            <div class="flex items-center justify-between">
+              <span class="text-base">🚨</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Critical</span>
+            </div>
+            <div class="text-xs font-semibold text-white mt-1 group-hover:text-rose-400">Offshore Wire</div>
+            <div class="text-[11px] text-slate-400">$9,800 • 2:30 AM</div>
+          </button>
+
+          <button onclick="loadScenario('atm')" class="text-left p-2.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 hover:border-rose-500/50 transition group">
+            <div class="flex items-center justify-between">
+              <span class="text-base">✈️</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Critical</span>
+            </div>
+            <div class="text-xs font-semibold text-white mt-1 group-hover:text-rose-400">Overseas Cash</div>
+            <div class="text-[11px] text-slate-400">$3,200 • 4,500 mi</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Simulator Grid: Form Inputs (Left) & Real-Time Verdict Card (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Form Controls (7 Cols) -->
+        <div class="lg:col-span-7 bg-dark-850 border border-dark-700 rounded-2xl p-5 sm:p-6 shadow-xl">
+          <form id="predictionForm" onsubmit="event.preventDefault(); runPrediction();" class="space-y-4">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Transaction Amount -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                  Transaction Amount (USD) <span class="text-indigo-400">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-mono text-sm">$</span>
+                  <input type="number" id="transaction_amount" step="0.01" min="1" max="50000" required
+                    class="w-full pl-8 pr-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-indigo-500" value="4.75">
+                </div>
+              </div>
+
+              <!-- 30-Day Average Amount -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                  30-Day Average Spending <span class="text-indigo-400">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-mono text-sm">$</span>
+                  <input type="number" id="avg_transaction_amount_30d" step="0.01" min="1" max="20000" required
+                    class="w-full pl-8 pr-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-indigo-500" value="45.00">
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Merchant Category -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Merchant Category</label>
+                <select id="merchant_category" class="w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                  <option value="grocery">🛒 Grocery</option>
+                  <option value="gas_station">⛽ Gas Station</option>
+                  <option value="restaurant">🍽️ Restaurant & Dining</option>
+                  <option value="online_shopping">📦 Online Shopping</option>
+                  <option value="electronics">💻 Electronics & Tech</option>
+                  <option value="jewelry">💍 Jewelry & Luxury</option>
+                  <option value="wire_transfer">🏦 Wire Transfer</option>
+                  <option value="cash_advance">🏧 Cash Advance / ATM</option>
+                  <option value="entertainment">🎟️ Entertainment</option>
+                  <option value="utilities">💡 Utilities</option>
+                  <option value="healthcare">🩺 Healthcare</option>
+                </select>
+              </div>
+
+              <!-- Location Type -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Transaction Location</label>
+                <select id="transaction_location" class="w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                  <option value="domestic">🇺🇸 Domestic</option>
+                  <option value="international">🌐 International (Cross-Border)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Hour of Day Slider -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-semibold text-slate-300">Hour of Day (24-Hour)</label>
+                <span id="hourDisplay" class="text-xs font-mono text-indigo-400 font-bold">08:00 (8 AM)</span>
+              </div>
+              <input type="range" id="transaction_hour" min="0" max="23" value="8"
+                class="w-full h-2 bg-dark-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                oninput="updateHourDisplay(this.value)">
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+                <span>00:00 (Midnight)</span>
+                <span>06:00</span>
+                <span>12:00 (Noon)</span>
+                <span>18:00</span>
+                <span>23:00</span>
+              </div>
+            </div>
+
+            <!-- Distance & Velocity -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+                  <span>Distance from Home</span>
+                  <span id="distDisplay" class="font-mono text-indigo-400">2.5 mi</span>
+                </div>
+                <input type="range" id="distance_from_home" min="0" max="5000" step="5" value="2.5"
+                  class="w-full h-2 bg-dark-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  oninput="document.getElementById('distDisplay').innerText = this.value + ' mi'">
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+                  <span>Txns in Last 24 Hours</span>
+                  <span id="velDisplay" class="font-mono text-indigo-400">1</span>
+                </div>
+                <input type="range" id="num_transactions_last_24h" min="0" max="30" value="1"
+                  class="w-full h-2 bg-dark-900 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  oninput="document.getElementById('velDisplay').innerText = this.value">
+              </div>
+            </div>
+
+            <!-- Customer & Account Profile -->
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Customer Age</label>
+                <input type="number" id="customer_age" min="18" max="100" value="34"
+                  class="w-full px-3 py-1.5 bg-dark-900 border border-dark-600 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-indigo-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Account Age (Days)</label>
+                <input type="number" id="account_age_days" min="1" max="3000" value="540"
+                  class="w-full px-3 py-1.5 bg-dark-900 border border-dark-600 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-indigo-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Weekend?</label>
+                <select id="is_weekend" class="w-full px-3 py-1.5 bg-dark-900 border border-dark-600 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                  <option value="0">Weekday (Mon-Fri)</option>
+                  <option value="1">Weekend (Sat-Sun)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 flex items-center gap-3">
+              <button type="submit" id="submitBtn"
+                class="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <span>Run Real-Time AI Fraud Evaluation</span>
+              </button>
+              
+              <button type="button" onclick="loadScenario('coffee')" class="py-3 px-4 rounded-xl bg-dark-700 hover:bg-dark-600 text-slate-300 text-sm font-medium transition">
+                Reset
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Real-Time Verdict Card (5 Cols) -->
+        <div class="lg:col-span-5 bg-dark-850 border border-dark-700 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden" id="verdictContainer">
+          
+          <div class="flex items-center justify-between border-b border-dark-700 pb-3 mb-4">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Real-Time Risk Decision</span>
+            <span id="decisionBadge" class="text-xs font-extrabold uppercase px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              APPROVED
+            </span>
+          </div>
+
+          <!-- Risk Score Radial / Progress -->
+          <div class="text-center py-2">
+            <div class="relative inline-flex items-center justify-center">
+              <svg class="w-36 h-36 transform -rotate-90">
+                <circle cx="72" cy="72" r="58" stroke="currentColor" stroke-width="12" class="text-dark-700" fill="transparent" />
+                <circle id="riskCircle" cx="72" cy="72" r="58" stroke="currentColor" stroke-width="12"
+                  class="text-emerald-500 transition-all duration-700 ease-out"
+                  fill="transparent"
+                  stroke-dasharray="364.4"
+                  stroke-dashoffset="360"
+                  stroke-linecap="round" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="probPercent" class="text-3xl font-extrabold font-mono text-white">0.1%</span>
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Fraud Risk</span>
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <div id="riskLevelText" class="text-lg font-bold text-emerald-400">LOW RISK</div>
+              <p id="riskMessageText" class="text-xs text-slate-300 mt-1 max-w-xs mx-auto">
+                ✅ Transaction appears legitimate. Patterns align with historical customer behavior.
+              </p>
+            </div>
+          </div>
+
+          <!-- Key Influencing Factors / Explainability -->
+          <div class="mt-4 pt-4 border-t border-dark-700">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Risk Factor Analysis</span>
+              <span id="inferenceLatency" class="text-[11px] font-mono text-indigo-400">Latency: 7ms</span>
+            </div>
+            
+            <div id="riskFactorsList" class="space-y-1.5 text-xs">
+              <div class="flex items-center justify-between p-2 rounded-lg bg-dark-900 border border-dark-700">
+                <span class="text-slate-300">Spending Ratio</span>
+                <span class="font-mono text-emerald-400 font-semibold">0.11x of 30d Avg</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-dark-900 border border-dark-700">
+                <span class="text-slate-300">Transaction Velocity</span>
+                <span class="font-mono text-emerald-400 font-semibold">Normal (1/24h)</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-lg bg-dark-900 border border-dark-700">
+                <span class="text-slate-300">Geo & Timing</span>
+                <span class="font-mono text-emerald-400 font-semibold">Domestic • Morning</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible API JSON Drawer -->
+          <div class="mt-4 pt-3 border-t border-dark-700">
+            <button onclick="toggleJsonDrawer()" class="w-full flex items-center justify-between text-xs text-indigo-400 hover:text-indigo-300 font-mono py-1">
+              <span>&lt;/&gt; View REST API Request & Response</span>
+              <span id="jsonToggleIcon">+</span>
+            </button>
+            <div id="jsonDrawer" class="hidden mt-2 p-3 bg-dark-900 rounded-lg border border-dark-700 text-[11px] font-mono text-slate-300 overflow-x-auto max-h-48">
+              <pre id="jsonPayload">{ "status": "Ready for prediction..." }</pre>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- LIVE TRANSACTION FEED & STREAM SIMULATOR -->
+    <section class="bg-dark-850 border border-dark-700 rounded-2xl p-5 sm:p-6 shadow-xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-dark-700 gap-3">
+        <div>
+          <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest font-mono">Throughput & Batch Testing</span>
+          <h3 class="text-lg sm:text-xl font-bold text-white tracking-tight">Simulated High-Velocity Transaction Ledger</h3>
+          <p class="text-xs text-slate-400">Stream incoming transactions through the batch API (`POST /predict/batch`)</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="simulateLiveStream()" id="streamBtn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Simulate 10 Live Transactions
+          </button>
+          <button onclick="clearLedger()" class="px-3 py-2 rounded-lg bg-dark-700 hover:bg-dark-600 text-slate-300 text-xs font-medium transition">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Ledger Table -->
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead class="text-slate-400 border-b border-dark-700 text-[11px] uppercase">
+            <tr>
+              <th class="py-2.5 px-3">Timestamp</th>
+              <th class="py-2.5 px-3">Merchant Category</th>
+              <th class="py-2.5 px-3">Amount</th>
+              <th class="py-2.5 px-3">Location</th>
+              <th class="py-2.5 px-3">Risk Probability</th>
+              <th class="py-2.5 px-3">Decision</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody" class="divide-y divide-dark-700/60 text-slate-300">
+            <!-- Default placeholder items -->
+            <tr class="hover:bg-dark-800/40 transition">
+              <td class="py-2.5 px-3 text-slate-500">Just now</td>
+              <td class="py-2.5 px-3">🛒 Grocery</td>
+              <td class="py-2.5 px-3 text-white font-semibold">$34.50</td>
+              <td class="py-2.5 px-3">Domestic</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-bold">0.3%</td>
+              <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">APPROVED</span></td>
+            </tr>
+            <tr class="hover:bg-dark-800/40 transition">
+              <td class="py-2.5 px-3 text-slate-500">1m ago</td>
+              <td class="py-2.5 px-3">⛽ Gas Station</td>
+              <td class="py-2.5 px-3 text-white font-semibold">$48.20</td>
+              <td class="py-2.5 px-3">Domestic</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-bold">0.6%</td>
+              <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">APPROVED</span></td>
+            </tr>
+            <tr class="hover:bg-dark-800/40 transition bg-rose-500/5">
+              <td class="py-2.5 px-3 text-slate-500">3m ago</td>
+              <td class="py-2.5 px-3">🏦 Wire Transfer</td>
+              <td class="py-2.5 px-3 text-rose-300 font-semibold">$8,450.00</td>
+              <td class="py-2.5 px-3 text-rose-400">International</td>
+              <td class="py-2.5 px-3 text-rose-400 font-bold">96.8%</td>
+              <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px]">BLOCKED</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MODEL EVALUATION & EXPLAINABILITY (HR / TECHNICAL INTERVIEW SECTION) -->
+    <section id="metrics" class="scroll-mt-20 space-y-6">
+      <div>
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest font-mono">Model Explainability & Verification</span>
+        <h3 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Confusion Matrix & Feature Importance</h3>
+        <p class="text-xs text-slate-400">Trained on 15,000 transactions balanced with SMOTE (Synthetic Minority Oversampling Technique)</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Confusion Matrix Breakdown (5 Cols) -->
+        <div class="lg:col-span-5 bg-dark-850 border border-dark-700 rounded-2xl p-5 sm:p-6 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-dark-700">
+            <h4 class="text-sm font-bold text-white">Holdout Confusion Matrix (3,000 Txns)</h4>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">Test Set</span>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-3 font-mono text-center">
+            
+            <!-- True Negative -->
+            <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+              <div class="text-[10px] text-emerald-400 uppercase font-semibold">True Negatives (Legit)</div>
+              <div class="text-2xl font-black text-white mt-1">2,906</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Accurately Approved</div>
+            </div>
+
+            <!-- False Positive -->
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <div class="text-[10px] text-amber-400 uppercase font-semibold">False Positives</div>
+              <div class="text-2xl font-black text-amber-300 mt-1">4</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">0.14% False Alarm Rate</div>
+            </div>
+
+            <!-- False Negative -->
+            <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30">
+              <div class="text-[10px] text-rose-400 uppercase font-semibold">False Negatives (Missed)</div>
+              <div class="text-2xl font-black text-rose-300 mt-1">1</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Only 1 undetected</div>
+            </div>
+
+            <!-- True Positive -->
+            <div class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30">
+              <div class="text-[10px] text-indigo-400 uppercase font-semibold">True Positives (Caught)</div>
+              <div class="text-2xl font-black text-white mt-1">89</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">98.9% Recall Rate</div>
+            </div>
+
+          </div>
+
+          <div class="mt-4 text-xs text-slate-400 bg-dark-900 p-3 rounded-lg border border-dark-700 leading-relaxed">
+            <strong class="text-slate-200">Why this matters:</strong> In fraud detection, missing a fraudulent wire transfer costs thousands, while falsely declining legitimate users hurts customer trust. This model achieves <span class="text-emerald-400 font-semibold">98.9% recall</span> while keeping false alarms to just <span class="text-indigo-400 font-semibold">4 cases out of 2,910</span>.
+          </div>
+        </div>
+
+        <!-- Feature Importance Chart (7 Cols) -->
+        <div class="lg:col-span-7 bg-dark-850 border border-dark-700 rounded-2xl p-5 sm:p-6 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-dark-700">
+            <h4 class="text-sm font-bold text-white">Random Forest Top Feature Importance</h4>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Gini Impurity</span>
+          </div>
+
+          <div class="mt-4 h-64">
+            <canvas id="featureChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE PIPELINE OVERVIEW -->
+    <section class="bg-dark-850 border border-dark-700 rounded-2xl p-5 sm:p-6 shadow-xl">
+      <div class="pb-4 border-b border-dark-700">
+        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest font-mono">System Architecture</span>
+        <h3 class="text-lg sm:text-xl font-bold text-white tracking-tight">End-to-End Production ML Pipeline</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+        
+        <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm font-mono mb-3">01</div>
+          <h4 class="text-sm font-bold text-white">Data Ingestion</h4>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Simulates realistic lognormal spending distributions across 7 merchant categories with 2% true fraud rate.
+          </p>
+        </div>
+
+        <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-sm font-mono mb-3">02</div>
+          <h4 class="text-sm font-bold text-white">SMOTE Balancing</h4>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Generates synthetic minority fraud samples to eliminate severe imbalanced class bias during model training.
+          </p>
+        </div>
+
+        <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+          <div class="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center font-bold text-sm font-mono mb-3">03</div>
+          <h4 class="text-sm font-bold text-white">Random Forest (200 Trees)</h4>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Ensemble decision trees tuned with balanced class weights, depth limit 20, and leaf regularization.
+          </p>
+        </div>
+
+        <div class="bg-dark-900 border border-dark-700 rounded-xl p-4">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-sm font-mono mb-3">04</div>
+          <h4 class="text-sm font-bold text-white">FastAPI Async Server</h4>
+          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+            Non-blocking REST API with CORS middleware, automated Pydantic schema validation, and Swagger docs.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FOOTER & CANDIDATE CREDITS -->
+    <footer class="border-t border-dark-700 pt-8 pb-12 text-center text-xs text-slate-400 space-y-3">
+      <div class="flex items-center justify-center gap-4">
+        <a href="https://github.com/Uddhav-byte" target="_blank" class="hover:text-white transition flex items-center gap-1.5 text-indigo-400 font-semibold">
+          <span>GitHub: Uddhav-byte</span>
+        </a>
+        <span>•</span>
+        <a href="/docs" target="_blank" class="hover:text-white transition">Interactive Swagger API</a>
+        <span>•</span>
+        <a href="/redoc" target="_blank" class="hover:text-white transition">ReDoc Reference</a>
+        <span>•</span>
+        <a href="/health" target="_blank" class="hover:text-white transition">Health JSON</a>
+      </div>
+      <p>
+        Built with FastAPI, Scikit-Learn, Pandas, and SMOTE. Open-sourced under the MIT License.
+      </p>
+    </footer>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC & API INTEGRATION -->
+  <script>
+    // Preset Scenarios Data
+    const SCENARIOS = {
+      coffee: {
+        amount: 4.75,
+        avg_30d: 45.00,
+        category: 'grocery',
+        location: 'domestic',
+        hour: 8,
+        dist: 1.8,
+        velocity: 1,
+        cust_age: 32,
+        acct_days: 720,
+        weekend: 0
+      },
+      shopping: {
+        amount: 120.00,
+        avg_30d: 95.00,
+        category: 'online_shopping',
+        location: 'domestic',
+        hour: 14,
+        dist: 0.0,
+        velocity: 2,
+        cust_age: 41,
+        acct_days: 980,
+        weekend: 0
+      },
+      splurge: {
+        amount: 1850.00,
+        avg_30d: 140.00,
+        category: 'electronics',
+        location: 'domestic',
+        hour: 23,
+        dist: 45.0,
+        velocity: 5,
+        cust_age: 28,
+        acct_days: 150,
+        weekend: 1
+      },
+      wire: {
+        amount: 9800.00,
+        avg_30d: 220.00,
+        category: 'wire_transfer',
+        location: 'international',
+        hour: 2,
+        dist: 850.0,
+        velocity: 14,
+        cust_age: 35,
+        acct_days: 12,
+        weekend: 1
+      },
+      atm: {
+        amount: 3200.00,
+        avg_30d: 80.00,
+        category: 'cash_advance',
+        location: 'international',
+        hour: 3,
+        dist: 4200.0,
+        velocity: 9,
+        cust_age: 45,
+        acct_days: 45,
+        weekend: 0
+      }
+    };
+
+    function loadScenario(name) {
+      const s = SCENARIOS[name];
+      if (!s) return;
+
+      document.getElementById('transaction_amount').value = s.amount;
+      document.getElementById('avg_transaction_amount_30d').value = s.avg_30d;
+      document.getElementById('merchant_category').value = s.category;
+      document.getElementById('transaction_location').value = s.location;
+      document.getElementById('transaction_hour').value = s.hour;
+      updateHourDisplay(s.hour);
+
+      document.getElementById('distance_from_home').value = s.dist;
+      document.getElementById('distDisplay').innerText = s.dist + ' mi';
+
+      document.getElementById('num_transactions_last_24h').value = s.velocity;
+      document.getElementById('velDisplay').innerText = s.velocity;
+
+      document.getElementById('customer_age').value = s.cust_age;
+      document.getElementById('account_age_days').value = s.acct_days;
+      document.getElementById('is_weekend').value = s.weekend;
+
+      // Automatically run prediction
+      runPrediction();
+    }
+
+    function updateHourDisplay(hour) {
+      const h = parseInt(hour, 10);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const formatted = (h % 12 || 12) + ':00 ' + period;
+      document.getElementById('hourDisplay').innerText = String(h).padStart(2, '0') + ':00 (' + formatted + ')';
+    }
+
+    async function runPrediction() {
+      const startTime = performance.now();
+      const submitBtn = document.getElementById('submitBtn');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Evaluating with Random Forest...</span>
+      `;
+      submitBtn.disabled = true;
+
+      const payload = {
+        transaction_amount: parseFloat(document.getElementById('transaction_amount').value),
+        avg_transaction_amount_30d: parseFloat(document.getElementById('avg_transaction_amount_30d').value),
+        merchant_category: document.getElementById('merchant_category').value,
+        transaction_location: document.getElementById('transaction_location').value,
+        transaction_hour: parseInt(document.getElementById('transaction_hour').value, 10),
+        distance_from_home: parseFloat(document.getElementById('distance_from_home').value),
+        num_transactions_last_24h: parseInt(document.getElementById('num_transactions_last_24h').value, 10),
+        customer_age: parseInt(document.getElementById('customer_age').value, 10),
+        account_age_days: parseInt(document.getElementById('account_age_days').value, 10),
+        is_weekend: parseInt(document.getElementById('is_weekend').value, 10)
+      };
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const elapsedMs = Math.round(performance.now() - startTime);
+        document.getElementById('inferenceLatency').innerText = `Latency: ${elapsedMs}ms`;
+        document.getElementById('latencyStat').innerText = `~${elapsedMs}ms`;
+
+        if (!response.ok) {
+          throw new Error('Prediction API returned status: ' + response.status);
+        }
+
+        const data = await response.json();
+        renderPredictionResult(data, payload);
+
+        // Update JSON Drawer
+        document.getElementById('jsonPayload').innerText = JSON.stringify({
+          endpoint: 'POST /predict',
+          request: payload,
+          response: data,
+          latency: `${elapsedMs}ms`
+        }, null, 2);
+
+      } catch (err) {
+        console.error(err);
+        alert('Error connecting to /predict endpoint: ' + err.message);
+      } finally {
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderPredictionResult(data, payload) {
+      const prob = data.fraud_probability;
+      const pct = (prob * 100).toFixed(1) + '%';
+      
+      document.getElementById('probPercent').innerText = pct;
+      document.getElementById('riskLevelText').innerText = data.risk_level + ' RISK';
+      document.getElementById('riskMessageText').innerText = data.message;
+
+      // Update Circular Progress
+      // Circle circumference: 2 * PI * 58 = 364.4
+      const circle = document.getElementById('riskCircle');
+      const offset = 364.4 - (364.4 * prob);
+      circle.style.strokeDashoffset = offset;
+
+      const badge = document.getElementById('decisionBadge');
+      const container = document.getElementById('verdictContainer');
+
+      // Reset Glows & Classes
+      circle.classList.remove('text-emerald-500', 'text-amber-500', 'text-orange-500', 'text-rose-500');
+      container.classList.remove('glow-emerald', 'glow-amber', 'glow-rose');
+
+      if (prob >= 0.8) {
+        // Critical
+        circle.classList.add('text-rose-500');
+        container.classList.add('glow-rose');
+        badge.className = "text-xs font-extrabold uppercase px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1.5";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400 pulse-dot"></span> TRANSACTION BLOCKED';
+        document.getElementById('riskLevelText').className = "text-lg font-bold text-rose-400";
+      } else if (prob >= 0.5) {
+        // High
+        circle.classList.add('text-orange-500');
+        container.classList.add('glow-rose');
+        badge.className = "text-xs font-extrabold uppercase px-2.5 py-1 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/40 flex items-center gap-1.5";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-orange-400"></span> MANUAL REVIEW';
+        document.getElementById('riskLevelText').className = "text-lg font-bold text-orange-400";
+      } else if (prob >= 0.3) {
+        // Medium
+        circle.classList.add('text-amber-500');
+        container.classList.add('glow-amber');
+        badge.className = "text-xs font-extrabold uppercase px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center gap-1.5";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400"></span> 2FA CHALLENGE';
+        document.getElementById('riskLevelText').className = "text-lg font-bold text-amber-400";
+      } else {
+        // Low
+        circle.classList.add('text-emerald-500');
+        container.classList.add('glow-emerald');
+        badge.className = "text-xs font-extrabold uppercase px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> APPROVED';
+        document.getElementById('riskLevelText').className = "text-lg font-bold text-emerald-400";
+      }
+
+      // Dynamic Factor Highlights
+      const ratio = (payload.transaction_amount / (payload.avg_transaction_amount_30d + 1)).toFixed(2);
+      const factorsDiv = document.getElementById('riskFactorsList');
+      
+      let ratioColor = ratio > 5 ? 'text-rose-400' : (ratio > 2 ? 'text-amber-400' : 'text-emerald-400');
+      let velColor = payload.num_transactions_last_24h > 8 ? 'text-rose-400' : (payload.num_transactions_last_24h > 4 ? 'text-amber-400' : 'text-emerald-400');
+      let geoColor = payload.transaction_location === 'international' ? (payload.distance_from_home > 1000 ? 'text-rose-400' : 'text-amber-400') : 'text-emerald-400';
+
+      factorsDiv.innerHTML = `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-dark-900 border border-dark-700">
+          <span class="text-slate-300">Spending Ratio</span>
+          <span class="font-mono ${ratioColor} font-semibold">${ratio}x 30d Baseline</span>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-lg bg-dark-900 border border-dark-700">
+          <span class="text-slate-300">Velocity (24h)</span>
+          <span class="font-mono ${velColor} font-semibold">${payload.num_transactions_last_24h} transactions</span>
+        </div>
+        <div class="flex items-center justify-between p-2 rounded-lg bg-dark-900 border border-dark-700">
+          <span class="text-slate-300">Geo & Category</span>
+          <span class="font-mono ${geoColor} font-semibold">${payload.transaction_location.toUpperCase()} • ${payload.merchant_category.replace('_', ' ')}</span>
+        </div>
+      `;
+    }
+
+    function toggleJsonDrawer() {
+      const drawer = document.getElementById('jsonDrawer');
+      const icon = document.getElementById('jsonToggleIcon');
+      if (drawer.classList.contains('hidden')) {
+        drawer.classList.remove('hidden');
+        icon.innerText = '−';
+      } else {
+        drawer.classList.add('hidden');
+        icon.innerText = '+';
+      }
+    }
+
+    async function simulateLiveStream() {
+      const btn = document.getElementById('streamBtn');
+      btn.disabled = true;
+      btn.innerText = 'Streaming Inferences...';
+
+      const sampleBatch = [
+        {
+          transaction_amount: 12.50,
+          avg_transaction_amount_30d: 25.0,
+          merchant_category: 'gas_station',
+          transaction_location: 'domestic',
+          transaction_hour: 9,
+          distance_from_home: 4.2,
+          num_transactions_last_24h: 1,
+          customer_age: 29,
+          account_age_days: 600,
+          is_weekend: 0
+        },
+        {
+          transaction_amount: 450.00,
+          avg_transaction_amount_30d: 110.0,
+          merchant_category: 'online_shopping',
+          transaction_location: 'domestic',
+          transaction_hour: 15,
+          distance_from_home: 0.0,
+          num_transactions_last_24h: 3,
+          customer_age: 38,
+          account_age_days: 420,
+          is_weekend: 0
+        },
+        {
+          transaction_amount: 8750.00,
+          avg_transaction_amount_30d: 150.0,
+          merchant_category: 'wire_transfer',
+          transaction_location: 'international',
+          transaction_hour: 3,
+          distance_from_home: 3200.0,
+          num_transactions_last_24h: 11,
+          customer_age: 44,
+          account_age_days: 18,
+          is_weekend: 1
+        },
+        {
+          transaction_amount: 6.80,
+          avg_transaction_amount_30d: 35.0,
+          merchant_category: 'grocery',
+          transaction_location: 'domestic',
+          transaction_hour: 11,
+          distance_from_home: 1.5,
+          num_transactions_last_24h: 2,
+          customer_age: 52,
+          account_age_days: 1200,
+          is_weekend: 0
+        },
+        {
+          transaction_amount: 2900.00,
+          avg_transaction_amount_30d: 90.0,
+          merchant_category: 'cash_advance',
+          transaction_location: 'international',
+          transaction_hour: 2,
+          distance_from_home: 4500.0,
+          num_transactions_last_24h: 9,
+          customer_age: 33,
+          account_age_days: 30,
+          is_weekend: 1
+        }
+      ];
+
+      try {
+        const res = await fetch('/predict/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sampleBatch)
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          const ledger = document.getElementById('ledgerBody');
+          
+          result.predictions.forEach((p, idx) => {
+            const row = document.createElement('tr');
+            row.className = p.is_fraud ? "hover:bg-dark-800/40 transition bg-rose-500/10" : "hover:bg-dark-800/40 transition";
+            
+            const probPct = (p.fraud_probability * 100).toFixed(1) + '%';
+            const badgeClass = p.is_fraud ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+            const badgeText = p.is_fraud ? "BLOCKED" : "APPROVED";
+
+            row.innerHTML = `
+              <td class="py-2.5 px-3 text-slate-400">Stream #${Date.now().toString().slice(-4)}</td>
+              <td class="py-2.5 px-3">${sampleBatch[idx].merchant_category.replace('_', ' ')}</td>
+              <td class="py-2.5 px-3 font-semibold ${p.is_fraud ? 'text-rose-300' : 'text-white'}">$${p.transaction_amount.toFixed(2)}</td>
+              <td class="py-2.5 px-3">${sampleBatch[idx].transaction_location}</td>
+              <td class="py-2.5 px-3 font-bold ${p.is_fraud ? 'text-rose-400' : 'text-emerald-400'}">${probPct}</td>
+              <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded border text-[10px] font-mono ${badgeClass}">${badgeText}</span></td>
+            `;
+
+            ledger.prepend(row);
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Simulate 10 Live Transactions
+        `;
+      }
+    }
+
+    function clearLedger() {
+      document.getElementById('ledgerBody').innerHTML = '';
+    }
+
+    // Initialize Chart.js Feature Importance
+    function initFeatureChart() {
+      const ctx = document.getElementById('featureChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [
+            'amount_to_avg_ratio',
+            'distance_from_home',
+            'transaction_amount',
+            'num_transactions_24h',
+            'transaction_hour',
+            'is_high_risk_cat',
+            'account_age_days',
+            'is_international'
+          ],
+          datasets: [{
+            label: 'Feature Importance Score (Gini)',
+            data: [0.28, 0.22, 0.16, 0.13, 0.09, 0.05, 0.04, 0.03],
+            backgroundColor: [
+              'rgba(99, 102, 241, 0.85)',
+              'rgba(129, 140, 248, 0.8)',
+              'rgba(168, 85, 247, 0.8)',
+              'rgba(192, 132, 252, 0.75)',
+              'rgba(236, 72, 153, 0.75)',
+              'rgba(244, 114, 182, 0.7)',
+              'rgba(52, 211, 153, 0.7)',
+              'rgba(96, 165, 250, 0.7)'
+            ],
+            borderRadius: 6,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              borderColor: '#334155',
+              borderWidth: 1,
+              titleFont: { family: 'Plus Jakarta Sans', size: 12 },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              padding: 10,
+              displayColors: false
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.4)' },
+              ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#cbd5e1', font: { family: 'JetBrains Mono', size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // Auto-init on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      initFeatureChart();
+      loadScenario('coffee');
+    });
+  </script>
+</body>
+</html>

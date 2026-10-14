@@ -8,8 +8,9 @@ A machine learning pipeline for identifying fraudulent financial transactions in
 ![Render](https://img.shields.io/badge/Render-Live-success?logo=render)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-🌐 **Live API:** [https://transaction-fraud-detection-system-dls2.onrender.com](https://transaction-fraud-detection-system-dls2.onrender.com)  
-📖 **Interactive Swagger UI:** [https://transaction-fraud-detection-system-dls2.onrender.com/docs](https://transaction-fraud-detection-system-dls2.onrender.com/docs)
+🌐 **Live Interactive Web App:** [https://transaction-fraud-detection-system-dls2.onrender.com](https://transaction-fraud-detection-system-dls2.onrender.com)  
+📖 **Interactive Swagger UI:** [https://transaction-fraud-detection-system-dls2.onrender.com/docs](https://transaction-fraud-detection-system-dls2.onrender.com/docs)  
+📊 **Model Metrics API:** [https://transaction-fraud-detection-system-dls2.onrender.com/model/metrics](https://transaction-fraud-detection-system-dls2.onrender.com/model/metrics)
 
 ---
 
@@ -46,7 +47,9 @@ Transaction-Fraud-Detection-System/
 │   ├── preprocessing.py       # Data cleaning, encoding, scaling, SMOTE
 │   ├── model.py               # Random Forest model training & evaluation
 │   ├── train.py               # End-to-end training pipeline
-│   └── api.py                 # FastAPI REST API
+│   ├── api.py                 # FastAPI REST API & endpoints
+│   └── templates/
+│       └── dashboard.html     # Interactive Fintech UI & Real-Time Simulator
 ├── tests/
 │   └── test_pipeline.py       # Unit tests
 ├── data/                      # Generated datasets (gitignored)
@@ -106,8 +109,9 @@ API will be available at `http://localhost:8000`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `GET` | `/health` | Detailed health status |
+| `GET` | `/` | Interactive Web Dashboard (browser) / Health check (JSON) |
+| `GET` | `/dashboard` | Interactive Fintech Fraud Detection Web Dashboard |
+| `GET` | `/health` | Detailed JSON health status |
 | `POST` | `/predict` | Predict fraud for a single transaction |
 | `POST` | `/predict/batch` | Batch prediction for multiple transactions |
 | `GET` | `/model/metrics` | View model evaluation metrics |

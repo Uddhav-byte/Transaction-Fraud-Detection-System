@@ -7,10 +7,11 @@ and returns fraud probability scores using the trained Random Forest model.
 
 import os
 import sys
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Union
 import numpy as np
 
 # Add project root to path
@@ -119,16 +120,47 @@ class ModelMetricsResponse(BaseModel):
     model_type: Optional[str] = None
 
 
+TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "dashboard.html")
+
 # ─── API Endpoints ───────────────────────────────────────────
 
-@app.get("/", response_model=HealthResponse)
-async def root():
-    """Health check endpoint."""
+@app.get("/", response_model=None)
+async def root(request: Request):
+    """
+    Main landing endpoint.
+    - Serves the interactive Fraud Detection Dashboard & Live Playground for web browsers.
+    - Returns JSON health check if Accept: application/json or format=json query parameter is present.
+    """
+    accept = request.headers.get("accept", "")
+    format_query = request.query_params.get("format", "")
+
+    # If client explicitly requests JSON (e.g., API health monitors)
+    if ("application/json" in accept and "text/html" not in accept) or format_query == "json":
+        return HealthResponse(
+            status="healthy" if MODEL_LOADED else "degraded",
+            model_loaded=MODEL_LOADED,
+            version="1.0.0",
+        )
+
+    # Serve rich interactive web dashboard to browsers
+    if os.path.exists(TEMPLATE_PATH):
+        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+
     return HealthResponse(
-        status="healthy",
+        status="healthy" if MODEL_LOADED else "degraded",
         model_loaded=MODEL_LOADED,
         version="1.0.0",
     )
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard():
+    """Direct URL for the interactive AI Fraud Detection dashboard."""
+    if os.path.exists(TEMPLATE_PATH):
+        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    raise HTTPException(status_code=404, detail="Dashboard template not found.")
 
 
 @app.get("/health", response_model=HealthResponse)
